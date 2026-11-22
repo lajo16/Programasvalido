@@ -1,0 +1,330 @@
+<title>Batería del portátil</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;700&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: escenario SVG a pantalla completa a la izquierda, panel de texto a la derecha; en móvil, texto debajo. Un solo look oscuro de "laboratorio". */
+:root {
+  color-scheme: dark;
+  --ground: #0e1522;
+  --panel: #151f30;
+  --line: #2a3850;
+  --ink: #e8eef8;
+  --muted: #93a3bd;
+  --ion: #4fd3e6;
+  --electron: #ffc35a;
+  --cathode: #8f7cf0;
+  --anode: #6f7c90;
+  --good: #63d69a;
+  --warn: #ff7a6b;
+  --f-display: "Sora", "Segoe UI", system-ui, sans-serif;
+  --f-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+html, body { height: 100%; }
+[hidden] { display: none !important; }
+body {
+  background: var(--ground); color: var(--ink); font-family: var(--f-body);
+  overflow: hidden;
+}
+.app {
+  height: 100%; display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 16px; gap: 20px; box-sizing: border-box;
+}
+.stage { position: relative; min-width: 0; min-height: 0; display: grid; place-items: center; }
+.stage svg { width: 100%; height: 100%; max-height: 100%; }
+.scene { transition: opacity .5s ease; }
+.scene.off { opacity: 0; pointer-events: none; }
+
+.side { display: flex; flex-direction: column; gap: 18px; min-width: 0; min-height: 0; justify-content: center; }
+.eyebrow { font-family: var(--f-mono); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--f-display); font-weight: 700; font-size: clamp(24px, 3vw, 36px); line-height: 1.1; margin: 0; text-wrap: balance; }
+.body { font-size: 16px; line-height: 1.6; color: var(--muted); margin: 0; max-width: 60ch; }
+.body b { color: var(--ink); font-weight: 500; }
+.readout { display: flex; gap: 12px; flex-wrap: wrap; }
+.chip { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; min-width: 96px; }
+.chip span { display: block; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.chip strong { font-family: var(--f-mono); font-size: 22px; font-variant-numeric: tabular-nums; }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+
+.controls { display: flex; align-items: center; gap: 10px; }
+button {
+  font: 500 14px var(--f-body); color: var(--ink); background: var(--panel);
+  border: 1px solid var(--line); border-radius: 999px; padding: 9px 16px; cursor: pointer;
+}
+button:hover { border-color: var(--muted); }
+button:focus-visible { outline: 2px solid var(--ion); outline-offset: 2px; }
+button.primary { background: var(--ion); color: var(--ground); border-color: var(--ion); }
+.dots { display: flex; gap: 8px; margin-left: auto; }
+.dots button { width: 10px; height: 10px; padding: 0; border-radius: 50%; background: var(--line); border: 0; }
+.dots button[aria-current="true"] { background: var(--ion); }
+.bar { height: 3px; background: var(--line); border-radius: 2px; overflow: hidden; }
+.bar div { height: 100%; width: 0; background: var(--ion); }
+
+svg text { font-family: var(--f-body); fill: var(--muted); font-size: 15px; }
+svg .lbl { fill: var(--ink); font-weight: 500; }
+svg .mono { font-family: var(--f-mono); }
+
+@media (max-width: 760px) {
+  body { overflow: auto; }
+  .app { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(260px, 48vh) auto; height: auto; min-height: 100%; }
+  .side { justify-content: flex-start; }
+  h1 { font-size: 24px; }
+}
+</style>
+
+<div class="app">
+  <div class="stage" id="stage">
+    <svg viewBox="0 0 800 480" role="img" aria-labelledby="title">
+      <defs>
+        <radialGradient id="glowIon"><stop offset="0" stop-color="#4fd3e6" stop-opacity=".9"/><stop offset="1" stop-color="#4fd3e6" stop-opacity="0"/></radialGradient>
+      </defs>
+
+      <!-- Escenas 1-3: interior de una celda de iones de litio -->
+      <g id="cellScene" class="scene">
+        <path id="wire" d="M 235 150 V 70 H 565 V 150" fill="none" stroke="#2a3850" stroke-width="6" stroke-linecap="round"/>
+        <g id="electrons"></g>
+        <!-- dispositivo en el circuito -->
+        <g id="charger">
+          <rect x="335" y="38" width="130" height="64" rx="12" fill="#151f30" stroke="#ffc35a" stroke-width="2"/>
+          <path d="M 392 50 l -12 22 h 14 l -8 20 l 22 -28 h -14 l 8 -14 z" fill="#ffc35a"/>
+          <text x="400" y="122" text-anchor="middle" class="lbl">Cargador</text>
+        </g>
+        <g id="laptop">
+          <rect x="350" y="34" width="100" height="60" rx="6" fill="#151f30" stroke="#93a3bd" stroke-width="2"/>
+          <rect id="screen" x="358" y="42" width="84" height="44" rx="3" fill="#4fd3e6" opacity=".2"/>
+          <path d="M 336 98 h 128 l -8 8 h -112 z" fill="#93a3bd"/>
+          <text x="400" y="128" text-anchor="middle" class="lbl">Portátil</text>
+        </g>
+        <!-- carcasa -->
+        <rect x="150" y="150" width="500" height="260" rx="18" fill="#121b2b" stroke="#2a3850" stroke-width="2"/>
+        <rect x="160" y="160" width="480" height="240" rx="12" fill="#4fd3e6" opacity=".05"/>
+        <g id="cathodeBars"></g>
+        <g id="anodeBars"></g>
+        <line x1="400" y1="165" x2="400" y2="395" stroke="#93a3bd" stroke-width="2" stroke-dasharray="6 7"/>
+        <g id="ions"></g>
+        <text x="235" y="440" text-anchor="middle" class="lbl">Cátodo (+)</text>
+        <text x="235" y="462" text-anchor="middle">óxido de litio-cobalto</text>
+        <text x="400" y="440" text-anchor="middle" class="lbl">Separador</text>
+        <text x="400" y="462" text-anchor="middle">+ electrolito</text>
+        <text x="565" y="440" text-anchor="middle" class="lbl">Ánodo (−)</text>
+        <text x="565" y="462" text-anchor="middle">grafito</text>
+      </g>
+
+      <!-- Escena 4: pack de 3 celdas + BMS -->
+      <g id="bmsScene" class="scene off">
+        <text x="400" y="50" text-anchor="middle" class="lbl">Pack 3S: tres celdas en serie</text>
+        <g id="packCells"></g>
+        <rect x="250" y="330" width="300" height="80" rx="12" fill="#151f30" stroke="#63d69a" stroke-width="2"/>
+        <text x="400" y="362" text-anchor="middle" class="lbl">BMS (chip de control)</text>
+        <text id="bmsStatus" x="400" y="390" text-anchor="middle" class="mono">vigilando…</text>
+        <g id="bmsLinks"></g>
+        <text id="packV" x="400" y="450" text-anchor="middle" class="mono lbl" font-size="20">11,1 V</text>
+      </g>
+
+      <!-- Escena 5: desgaste -->
+      <g id="ageScene" class="scene off">
+        <text x="110" y="60" class="lbl">Capacidad que conserva la batería</text>
+        <g id="ageGrid"></g>
+        <path id="ageLine" fill="none" stroke="#4fd3e6" stroke-width="4" stroke-linecap="round"/>
+        <path id="ageLineGentle" fill="none" stroke="#63d69a" stroke-width="4" stroke-linecap="round" stroke-dasharray="2 9"/>
+        <circle id="ageDot" r="7" fill="#4fd3e6"/>
+        <text x="560" y="400" class="mono" fill="#4fd3e6" style="fill:#4fd3e6">uso 0–100 %, con calor</text>
+        <text x="560" y="420" class="mono" style="fill:#63d69a">uso 20–80 %, fresco</text>
+      </g>
+    </svg>
+  </div>
+
+  <aside class="side" aria-live="polite">
+    <div class="eyebrow" id="eyebrow">Escena 1 de 5</div>
+    <h1 id="title">Dentro de la batería</h1>
+    <p class="body" id="text"></p>
+    <div class="readout" id="readout">
+      <div class="chip"><span>Carga</span><strong id="pct">50 %</strong></div>
+      <div class="chip"><span>Voltaje celda</span><strong id="volt">3,70 V</strong></div>
+    </div>
+    <div class="legend" id="legend">
+      <span><i style="background:var(--ion)"></i>Ion de litio (Li⁺)</span>
+      <span><i style="background:var(--electron)"></i>Electrón (e⁻)</span>
+    </div>
+    <div class="bar"><div id="timer"></div></div>
+    <div class="controls">
+      <button id="prev" type="button">Anterior</button>
+      <button id="play" type="button" class="primary">Pausa</button>
+      <button id="next" type="button">Siguiente</button>
+      <div class="dots" id="dots"></div>
+    </div>
+  </aside>
+</div>
+
+<script>
+(() => {
+  const NS = "http://www.w3.org/2000/svg";
+  const $ = id => document.getElementById(id);
+  const el = (tag, attrs, parent) => { const n = document.createElementNS(NS, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); parent && parent.appendChild(n); return n; };
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const fmt = (n, d) => n.toFixed(d).replace(".", ",");
+
+  const scenes = [
+    { mode: "idle", title: "Dentro de la batería",
+      text: "Un portátil lleva varias <b>celdas de iones de litio</b>. Cada una tiene dos capas que guardan litio: el <b>cátodo</b> y el <b>ánodo</b>. En medio, un <b>separador</b> empapado en electrolito deja pasar los iones, pero no los electrones." },
+    { mode: "charge", title: "Cargando",
+      text: "El cargador empuja <b>electrones</b> por el cable hacia el ánodo. Para equilibrar esa carga, los <b>iones de litio</b> salen del cátodo, cruzan el separador y se meten entre las capas de grafito. Así se almacena la energía." },
+    { mode: "discharge", title: "Usando el portátil",
+      text: "Al desenchufar, el camino se invierte. Los iones vuelven al cátodo por dentro y los electrones solo pueden volver <b>por fuera, a través del portátil</b>. Esa corriente de electrones es la que alimenta la pantalla y el procesador." },
+    { mode: "bms", title: "El cerebro: el BMS",
+      text: "Las celdas se conectan en serie para sumar voltaje (3 × 3,7 V ≈ 11,1 V). Un chip llamado <b>BMS</b> mide cada celda: corta la carga a 4,2 V, corta la descarga hacia 3 V, vigila la temperatura y <b>equilibra</b> la celda que va adelantada." },
+    { mode: "age", title: "Por qué se gasta",
+      text: "En cada ciclo, algo de litio queda atrapado en una capa que crece sobre el ánodo (la <b>SEI</b>). Tras unos 500–1000 ciclos queda ~80 % de capacidad. El calor y pasar mucho tiempo al 100 % lo aceleran; mantenerla <b>entre 20 y 80 %</b> lo frena." },
+  ];
+
+  // ---------- Celda ----------
+  const cBars = [180, 210, 240, 270, 300], aBars = [500, 530, 560, 590, 620];
+  cBars.forEach(x => el("rect", { x: x - 4, y: 168, width: 8, height: 224, rx: 3, fill: "#8f7cf0" }, $("cathodeBars")));
+  aBars.forEach(x => el("rect", { x: x - 4, y: 168, width: 8, height: 224, rx: 3, fill: "#6f7c90" }, $("anodeBars")));
+  const slots = (bars) => { const s = []; for (let c = 0; c < 4; c++) for (let r = 0; r < 8; r++) s.push([bars[c] + 15, 182 + r * 28]); return s; };
+  const cSlots = slots(cBars), aSlots = slots(aBars);
+  const N = 24, ions = [];
+  for (let i = 0; i < N; i++) {
+    const g = el("g", {}, $("ions"));
+    el("circle", { r: 13, fill: "url(#glowIon)" }, g);
+    el("circle", { r: 6, fill: "#4fd3e6" }, g);
+    ions.push({ g, c: cSlots[(i * 7) % 32], a: aSlots[(i * 11) % 32], p: 0, ph: Math.random() * 6.28 });
+  }
+  const wire = $("wire"), wireLen = wire.getTotalLength();
+  const electrons = [];
+  for (let i = 0; i < 12; i++) electrons.push({ t: i / 12, n: el("circle", { r: 5, fill: "#ffc35a" }, $("electrons")) });
+
+  // ---------- BMS ----------
+  const pack = [];
+  [190, 400, 610].forEach((x, i) => {
+    const g = el("g", {}, $("packCells"));
+    el("rect", { x: x - 60, y: 80, width: 120, height: 200, rx: 14, fill: "#121b2b", stroke: "#2a3850", "stroke-width": 2 }, g);
+    const fill = el("rect", { x: x - 52, width: 104, rx: 8, fill: "#4fd3e6", opacity: .75 }, g);
+    const v = el("text", { x, y: 305, "text-anchor": "middle", class: "mono lbl" }, g);
+    const bal = el("text", { x, y: 72, "text-anchor": "middle", class: "mono", style: "fill:#ffc35a" }, g);
+    el("line", { x1: x, y1: 315, x2: x < 400 ? 300 : x > 400 ? 500 : 400, y2: 330, stroke: "#63d69a", "stroke-width": 2, "stroke-dasharray": "4 5" }, $("bmsLinks"));
+    if (i < 2) el("text", { x: x + 105, y: 185, "text-anchor": "middle", class: "lbl", "font-size": 24 }, g).textContent = "+";
+    pack.push({ fill, v, bal, lvl: [0.2, 0.28, 0.22][i] });
+  });
+
+  // ---------- Desgaste ----------
+  const X0 = 110, X1 = 690, Y0 = 360, Y1 = 90; // 0..1000 ciclos, 60..100 %
+  const sx = c => X0 + (c / 1000) * (X1 - X0), sy = p => Y0 - ((p - 60) / 40) * (Y0 - Y1);
+  [60, 70, 80, 90, 100].forEach(p => {
+    el("line", { x1: X0, x2: X1, y1: sy(p), y2: sy(p), stroke: "#2a3850" }, $("ageGrid"));
+    el("text", { x: X0 - 12, y: sy(p) + 5, "text-anchor": "end", class: "mono" }, $("ageGrid")).textContent = p + " %";
+  });
+  [0, 250, 500, 750, 1000].forEach(c => el("text", { x: sx(c), y: Y0 + 26, "text-anchor": "middle", class: "mono" }, $("ageGrid")).textContent = c);
+  el("text", { x: (X0 + X1) / 2, y: Y0 + 52, "text-anchor": "middle" }, $("ageGrid")).textContent = "ciclos de carga completos";
+  const harsh = c => 100 - 22 * Math.pow(c / 1000, 0.75), gentle = c => 100 - 9 * Math.pow(c / 1000, 0.8);
+  const pathFor = (f, upto) => { let d = ""; for (let c = 0; c <= upto; c += 10) d += (c ? " L " : "M ") + sx(c).toFixed(1) + " " + sy(f(c)).toFixed(1); return d; };
+
+  // ---------- Estado y navegación ----------
+  let idx = 0, playing = !reduced, sceneT = 0, charge = 0.5;
+  const DUR = 11;
+  scenes.forEach((s, i) => {
+    const b = document.createElement("button"); b.type = "button"; b.setAttribute("aria-label", "Escena " + (i + 1) + ": " + s.title);
+    b.onclick = () => go(i); $("dots").appendChild(b);
+  });
+  function go(i) {
+    idx = (i + scenes.length) % scenes.length; sceneT = 0;
+    const s = scenes[idx];
+    $("eyebrow").textContent = "Escena " + (idx + 1) + " de " + scenes.length;
+    $("title").textContent = s.title; $("text").innerHTML = s.text;
+    [...$("dots").children].forEach((d, j) => d.setAttribute("aria-current", j === idx));
+    const cell = ["idle", "charge", "discharge"].includes(s.mode);
+    $("cellScene").classList.toggle("off", !cell);
+    $("bmsScene").classList.toggle("off", s.mode !== "bms");
+    $("ageScene").classList.toggle("off", s.mode !== "age");
+    $("readout").hidden = !cell; $("legend").hidden = !cell;
+    $("charger").style.display = s.mode === "discharge" ? "none" : "";
+    $("laptop").style.display = s.mode === "discharge" ? "" : "none";
+    $("charger").style.opacity = s.mode === "idle" ? .35 : 1;
+    if (s.mode === "charge") charge = 0.1;
+    if (s.mode === "discharge") charge = 0.95;
+    if (s.mode === "idle") charge = 0.5;
+    if (s.mode === "bms") pack.forEach((c, j) => c.lvl = [0.2, 0.28, 0.22][j]);
+  }
+  $("prev").onclick = () => go(idx - 1);
+  $("next").onclick = () => go(idx + 1);
+  $("play").onclick = () => { playing = !playing; $("play").textContent = playing ? "Pausa" : "Reproducir"; };
+  $("play").textContent = playing ? "Pausa" : "Reproducir";
+  addEventListener("keydown", e => { if (e.key === "ArrowRight") go(idx + 1); if (e.key === "ArrowLeft") go(idx - 1); if (e.key === " " && e.target === document.body) { e.preventDefault(); $("play").click(); } });
+  let tx = null;
+  $("stage").addEventListener("touchstart", e => tx = e.touches[0].clientX, { passive: true });
+  $("stage").addEventListener("touchend", e => { if (tx == null) return; const dx = e.changedTouches[0].clientX - tx; if (Math.abs(dx) > 50) go(idx + (dx < 0 ? 1 : -1)); tx = null; });
+
+  // ---------- Bucle de animación ----------
+  const speed = reduced ? 0.4 : 1;
+  let last = performance.now(), clock = 0, fullT = 0;
+  function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000) * speed; last = now; clock += dt;
+    sceneT += dt / speed;
+    if (playing && sceneT > DUR) go(idx + 1);
+    $("timer").style.width = Math.min(100, sceneT / DUR * 100) + "%";
+    const mode = scenes[idx].mode;
+
+    if (mode === "idle" || mode === "charge" || mode === "discharge") {
+      if (mode === "charge") { charge += dt * 0.09; if (charge > 1) charge = 0.1; }
+      if (mode === "discharge") { charge -= dt * 0.09; if (charge < 0.05) charge = 0.95; }
+      const inAnode = Math.round(charge * N);
+      ions.forEach((ion, i) => {
+        const target = i < inAnode ? 1 : 0;
+        ion.p += Math.sign(target - ion.p) * Math.min(Math.abs(target - ion.p), dt * 0.9);
+        const e = ion.p * ion.p * (3 - 2 * ion.p);
+        const x = ion.c[0] + (ion.a[0] - ion.c[0]) * e;
+        const moving = ion.p > 0.01 && ion.p < 0.99;
+        const y = ion.c[1] + (ion.a[1] - ion.c[1]) * e + (moving ? Math.sin(clock * 6 + ion.ph) * 10 : Math.sin(clock * 2 + ion.ph) * 1.5);
+        ion.g.setAttribute("transform", `translate(${x.toFixed(1)} ${y.toFixed(1)})`);
+      });
+      const dir = mode === "charge" ? 1 : mode === "discharge" ? -1 : 0;
+      electrons.forEach(e => {
+        e.t = (e.t + dir * dt * 0.22 + 1) % 1;
+        const pt = wire.getPointAtLength(e.t * wireLen);
+        e.n.setAttribute("cx", pt.x); e.n.setAttribute("cy", pt.y);
+        e.n.setAttribute("opacity", dir ? 1 : 0.25);
+      });
+      $("screen").setAttribute("opacity", mode === "discharge" ? (0.55 + Math.sin(clock * 3) * 0.1).toFixed(2) : 0.2);
+      $("pct").textContent = Math.round(charge * 100) + " %";
+      $("volt").textContent = fmt(3.0 + 1.2 * charge, 2) + " V";
+    }
+
+    if (mode === "bms") {
+      const max = Math.max(...pack.map(c => c.lvl));
+      let status = "cargando — todo en rango";
+      pack.forEach((c, j) => {
+        const ahead = c.lvl - Math.min(...pack.map(q => q.lvl)) > 0.03 && c.lvl === max;
+        c.lvl += dt * (ahead ? 0.025 : 0.07);
+        if (c.lvl >= 1) c.lvl = 1;
+        const h = 184 * c.lvl;
+        c.fill.setAttribute("y", 88 + 184 - h); c.fill.setAttribute("height", h);
+        c.fill.setAttribute("fill", c.lvl >= 1 ? "#63d69a" : "#4fd3e6");
+        c.v.textContent = fmt(3.0 + 1.2 * c.lvl, 2) + " V";
+        c.bal.textContent = ahead && c.lvl < 1 ? "equilibrando" : "";
+        if (ahead) status = "celda " + (j + 1) + " adelantada → la frena";
+      });
+      if (pack.every(c => c.lvl >= 1)) {
+        status = "4,20 V por celda → corta la carga";
+        fullT += dt;
+        if (fullT > 2.5) { fullT = 0; pack.forEach((c, j) => c.lvl = [0.2, 0.28, 0.22][j]); }
+      }
+      $("bmsStatus").textContent = status;
+      $("packV").textContent = "Pack: " + fmt(pack.reduce((s, c) => s + 3.0 + 1.2 * c.lvl, 0), 1) + " V";
+    }
+
+    if (mode === "age") {
+      const c = Math.min(1000, (sceneT / (DUR * 0.8)) * 1000);
+      $("ageLine").setAttribute("d", pathFor(harsh, Math.floor(c / 10) * 10));
+      $("ageLineGentle").setAttribute("d", pathFor(gentle, Math.floor(c / 10) * 10));
+      $("ageDot").setAttribute("cx", sx(c)); $("ageDot").setAttribute("cy", sy(harsh(c)));
+    }
+    requestAnimationFrame(frame);
+  }
+  go(0);
+  requestAnimationFrame(frame);
+})();
+</script>
